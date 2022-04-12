@@ -64,6 +64,7 @@ class block_assessment_information2 extends block_base {
 
         $o = '';
 
+        // Use the standard list of assessment types if no overriding type array is given in the config file.
         isset($CFG->ai_types) ? $types = $CFG->ai_types : $types = ['assign', 'choice', 'feedback', 'lesson', 'quiz'];
 
         foreach ($types as $type) {
@@ -93,14 +94,14 @@ class block_assessment_information2 extends block_base {
             $o .= "<ul>";
             foreach ($modules as $module) {
                 $o .= html_writer::start_tag('li');
-                $o .= html_writer::tag('a', $module->name, ['href' => '../mod/'.$type.'/view.php?id='.$module->id, 'target' => '_blank']);
+                $o .= html_writer::tag('a', $module->name,
+                    ['href' => '../mod/'.$type.'/view.php?id='.$module->id, 'target' => '_blank']);
                 $o .= html_writer::end_tag('li');
             }
             $o .= "</ul>";
             return $o;
         }
-
-
+        
         return $o;
     }
 
