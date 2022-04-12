@@ -101,7 +101,6 @@ class block_assessment_information2 extends block_base {
             $o .= "</ul>";
             return $o;
         }
-        
         return $o;
     }
 
