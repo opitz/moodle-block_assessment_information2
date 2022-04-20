@@ -15,16 +15,17 @@
 // along with Moodle.  If not, see <http://www.gnu.org/licenses/>.
 
 /**
- * Newblock block caps.
+ * Block Assessment Information 2.
  *
  * @package    block_assessment_information2
  * @copyright  2022 Queen Mary University of London (m.opitz@qmul.ac.uk)
  * @license    http://www.gnu.org/copyleft/gpl.html GNU GPL v3 or later
  */
 
-defined('MOODLE_INTERNAL') || die();
+/**
+ * Block Assessment Information 2.
+ *
+ * @copyright  2022 Queen Mary University of London (m.opitz@qmul.ac.uk)
+ * @license    http://www.gnu.org/copyleft/gpl.html GNU GPL v3 or later
+ */
 
-$settings->add(new admin_setting_configtext('block_assessment_information2/default_types',
-    new lang_string('default_types', 'block_assessment_information2'),
-    new lang_string('default_types_desc', 'block_assessment_information2'),
-    'assign, book, chat, choice, feedback, forum, lesson, quiz', PARAM_RAW));

@@ -35,10 +35,58 @@ class block_assessment_information2_edit_form extends block_edit_form {
         // Section header title according to language file.
         $mform->addElement('header', 'configheader', get_string('blocksettings', 'block'));
 
+        /*
         // A sample string variable with a default value.
         $mform->addElement('text', 'config_text', get_string('blockstring', 'block_assessment_information2'));
         $mform->setDefault('config_text', 'default value');
         $mform->setType('config_text', PARAM_TEXT);
 
+        // Define module types to include by default if no overriding type array is given in the config file.
+        isset($CFG->ai_default_types) ? $default = $CFG->ai_default_types : $default = [
+            'assign',
+            'book',
+            'chat',
+            'choice',
+            'feedback',
+            'forum',
+            'lesson',
+            'quiz',
+        ];
+*/
+        $mtypes = $this->get_module_types();
+        $default_types = get_config('block_assessment_information2', 'default_types');
+        $default = array_map('trim', explode(',', $default_types));
+
+        if($mtypes) foreach ($mtypes as $mtype) {
+            $mname = get_string('pluginname', 'mod_'.$mtype) == '[[pluginname]]' ?
+                ucfirst($mtype) :
+                get_string('pluginname', 'mod_'.$mtype) . "($mtype)";
+
+            $mform->addElement('advcheckbox',
+                'config_'.$mtype,
+                $mname,
+                null,
+                null,
+                array(0, 1));
+            if (in_array($mtype, $default)) {
+                $mform->setDefault('config_'.$mtype, 1);
+            } else {
+                $mform->setDefault('config_'.$mtype, 0);
+            }
+            $mform->setType('config_'.$mtype, PARAM_INT);
+        }
+
     }
+
+    private function get_module_types() {
+        global $DB;
+
+        $result = array();
+        $records = $DB->get_records('modules', null, 'name');
+        if ($records) foreach ($records as $record) {
+            $result[] = $record->name;
+        }
+        return $result;
+    }
+
 }
