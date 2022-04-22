@@ -46,9 +46,11 @@ class block_assessment_information2 extends block_base {
      * @throws coding_exception
      */
     public function init() {
+        global $PAGE;
         $this->title = get_string('pluginname', 'block_assessment_information2');
         $this->description = get_string('description', 'block_assessment_information2');
 
+        $PAGE->requires->js_call_amd('block_assessment_information2/toggle', 'init', array());
 
     }
 
@@ -61,15 +63,23 @@ class block_assessment_information2 extends block_base {
      * @throws moodle_exception
      */
     public function get_content() {
-        global $DB;
-        $this->page->requires->js_call_amd('block_assessment_information2/toggle', 'init', array());
+        global $COURSE, $DB;
+//        $this->page->requires->js_call_amd('block_assessment_information2/toggle', 'init', array());
 
         $course = $this->page->course;
 
         $o = '';
+        // A hidden dev containing the course ID to be used by jQuery.
+        $o .= html_writer::div($COURSE->id, 'hidden', ['id' => 'ao-courseid', 'style' => 'display: none;']);
+
+        // A test area
+//        $o .= html_writer::div('test area','testarea', ['id' => 'testarea']);
 
         // Use a list of all assessment types if no overriding type array is given in the config file.
         $types = $this->get_module_types();
+
+        // Get the toggle state of module types for the current user.
+        $this->togglestate = $this->get_togglestate();
 
         // Loop through the types and list all their module instances related to this course.
         $dbman = $DB->get_manager();
@@ -114,20 +124,37 @@ class block_assessment_information2 extends block_base {
         $o = '';
         // If the course has modules of a given type show them.
         if ($modules = $this->get_modules($courseid, $mtype)) {
+            // Get the name of the module type from the pluginname in the string file where present
+            // otherwise use the mtype with a capital 1st char.
             $mname = get_string('pluginname', 'mod_'.$mtype) == '[[pluginname]]' ?
                 ucfirst($mtype) :
                 get_string('pluginname', 'mod_'.$mtype);
 
             $o .= html_writer::start_div('type-'.$mtype);
-            $o .= html_writer::start_div('ai2-header expanded');
-            $o .= html_writer::tag('i','', ['class' => 'icon fa fa-caret-down']);
+            $o .= html_writer::start_div('ai2-header');
+
+/*            if ($this->togglestate[$mname] == 0) {
+                $classes = 'icon fa fa-caret-right';
+            } else {
+                $classes = 'icon fa fa-caret-down';
+            }
+*/
+            $this->togglestate[$mname] == 0 ? $classes = 'icon fa fa-caret-right' : $classes = 'icon fa fa-caret-down';
+
+//            $o .= html_writer::tag('i','', ['class' => 'icon fa fa-caret-down']);
+            $o .= html_writer::tag('i','', ['class' => $classes]);
             $o .= html_writer::span($mname, 'mname', ['id' => 'ai2-header-'.$mtype]);
             $o .= html_writer::end_div();
 
             $dateformat = "%d %B %Y";
 
             // Make a list.
-            $o .= html_writer::start_tag('ul', ['class' => 'content ai2-content-'.$mtype]);
+            $this->togglestate[$mname] == 0 ?
+                $o .= html_writer::start_tag('ul',
+                    ['class' => 'content ai2-content-'.$mtype, 'style' => 'display: none;']) :
+                $o .= html_writer::start_tag('ul',
+                    ['class' => 'content ai2-content-'.$mtype])
+            ;
 
             foreach ($modules as $module) {
                 $o .= html_writer::start_tag('li');
@@ -147,7 +174,7 @@ class block_assessment_information2 extends block_base {
                         break;
                 }
                 if ($duedate > 0) {
-                    $o .= html_writer::div('Due: '. userdate($duedate, $dateformat));
+                    $o .= html_writer::div('Due: '. userdate($duedate, $dateformat), 'ao-duedate');
                 }
                 $o .= html_writer::end_tag('li');
             }
@@ -177,6 +204,35 @@ class block_assessment_information2 extends block_base {
         ";
         $result = $DB->get_records_sql($sql);
         return $result;
+    }
+
+    /**
+     * Get the toggle state of a given course for the current user.
+     *
+     * @param array|stdClass $course
+     * @return array
+     * @throws dml_exception
+     */
+    private function get_togglestate() {
+        global $COURSE, $DB, $USER;
+
+        $record = $DB->get_record('user_preferences', array('userid' => $USER->id, 'name' => 'ao_toggle_state_'.$COURSE->id));
+        if (!isset($record->value)) {
+            return array();
+        }
+        // Prepare the toggle state.
+        $togglestate = (array) json_decode($record->value);
+
+        // Weird rearranging the array due to error with PHP below version 7.2.
+        // NO idea why this is needed - but it works.
+        if (version_compare(PHP_VERSION, '7.2.0') < 0) {
+            $togglestate2 = array();
+            foreach ($togglestate as $key => $value) {
+                $togglestate2[$key] = $value;
+            }
+            $togglestate = $togglestate2;
+        }
+        return $togglestate;
     }
 
 }
